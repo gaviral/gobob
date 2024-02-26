@@ -1,63 +1,56 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"os"
 	"os/exec"
 	"strings"
 )
 
-var commandMap = map[string]map[string]string{
-	"dictate_text": {
-		"type":    "cli",
-		"command": "shortcuts run dictate_text",
-	},
-	"open_chatGPT": {
-		"type":    "cli",
-		"command": "open https://chat.openai.com",
-	},
-	"wait_for_chatGPT": {
-		"type":    "cli",
-		"command": "sleep 2",
-	},
-	"paste_text": {
-		"type":    "key_press",
-		"command": "cmd+v",
-	},
-	"press_enter": {
-		"type":    "key_press",
-		"command": "enter",
-	},
-	"query_chatGPT": {
-		"type":    "chain",
-		"command": "dictate_text | open_chatGPT | wait_for_chatGPT | paste_text | press_enter",
-	},
-	"dictate_text_and_paste": {
-		"type":    "chain",
-		"command": "dictate_text | paste_text",
-	},
+// CommandInfo defines the structure for each command based on the JSON structure
+type CommandInfo struct {
+	Type    string   `json:"type"`
+	Command string   `json:"command"`
+	Phrases []string `json:"phrases"`
 }
+
+var commandMap map[string]CommandInfo
 
 func main() {
 	println("\n\nStarting Bob...")
+	loadCommands("commands.json")
+	// Continuously listen for commands
+	for {
+		var cmd string
+		fmt.Print("Enter command: ")
+		fmt.Scanln(&cmd)
+		handleCommand(cmd)
+	}
+}
 
-	var cmd = "query_chatGPT"
-	handleCommand(cmd)
-
+func loadCommands(filename string) {
+	println("Loading commands from file:", filename)
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		log.Fatal("Error loading commands:", err)
+	}
+	if err := json.Unmarshal(data, &commandMap); err != nil {
+		log.Fatalf("Error parsing commands: %v", err)
+	}
 }
 
 func handleCommand(cmd string) {
 	println("Handling command:", cmd)
-
-	var cmdType = commandMap[cmd]["type"]
-	var cmdString = commandMap[cmd]["command"]
-
-	switch cmdType {
+	commandDetails := commandMap[cmd]
+	switch commandDetails.Type {
 	case "cli":
-		executeCLICommand(cmdString)
+		executeCLICommand(commandDetails.Command)
 	case "key_press":
-		executeKeyPressCommand(cmdString)
+		executeKeyPressCommand(commandDetails.Command)
 	case "chain":
-		commands := strings.Split(cmdString, " | ")
+		commands := strings.Split(commandDetails.Command, " | ")
 		for _, c := range commands {
 			handleCommand(c)
 		}
@@ -66,38 +59,26 @@ func handleCommand(cmd string) {
 
 func executeCLICommand(s string) {
 	println("Executing CLI command:", s)
-	var cmdStrings = strings.Fields(s)
-	cmd := exec.Command(cmdStrings[0], cmdStrings[1:]...)
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return
+	cmd := exec.Command(strings.Fields(s)[0], strings.Fields(s)[1:]...)
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error: %v\n", err)
 	}
 }
 
 func executeKeyPressCommand(s string) {
 	println("Executing key press command:", s)
-	var cmd *exec.Cmd
-
-	// Handling commands with "cmd" modifier key
-	if strings.HasPrefix(s, "cmd+") {
+	script := "tell application \"System Events\" to keystroke "
+	switch {
+	case strings.HasPrefix(s, "cmd+"):
 		key := strings.TrimPrefix(s, "cmd+")
-		script := fmt.Sprintf("tell application \"System Events\" to keystroke \"%s\" using command down", key)
-		cmd = exec.Command("osascript", "-e", script)
-	} else {
-		// Handling other types of keystrokes like "enter"
-		switch s {
-		case "enter":
-			cmd = exec.Command("osascript", "-e", "tell application \"System Events\" to keystroke return")
-		default:
-			fmt.Println("Unsupported key press command:", s)
-			return
-		}
+		script += fmt.Sprintf("\"%s\" using command down", key)
+	case s == "enter":
+		script += "return"
+	default:
+		fmt.Printf("Unsupported key press command: %s\n", s)
+		return
 	}
-
-	// Execute the command
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println("Error executing key press command:", err)
+	if err := exec.Command("osascript", "-e", script).Run(); err != nil {
+		fmt.Printf("Error executing key press command: %v\n", err)
 	}
 }
