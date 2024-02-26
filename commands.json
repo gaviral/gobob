@@ -46,9 +46,20 @@
       "press the enter key"
     ]
   },
+  "press_cmd_enter": {
+      "type": "key_press",
+      "command": "cmd+enter",
+      "phrases": [
+      "press command enter",
+      "hit command enter",
+      "press the command enter keys",
+      "press command and enter",
+      "press the command and enter keys"
+      ]
+  },
   "query_chatGPT": {
     "type": "chain",
-    "command": "dictate_text | open_chatGPT | wait_2_sec | paste_text | press_enter",
+    "command": "dictate_text | open_chatGPT | wait_2_sec | paste_text | press_cmd_enter",
     "phrases": [
       "query chatGPT",
       "query chat GPT",
@@ -64,6 +75,17 @@
       "dictate and paste",
       "dictate and paste the text",
       "dictate and paste the message"
+    ]
+  },
+  "exit_program": {
+    "type": "exit",
+    "command": "",
+    "phrases": [
+      "exit",
+      "quit",
+      "terminate",
+      "close",
+      "stop listening"
     ]
   }
 }

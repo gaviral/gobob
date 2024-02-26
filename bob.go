@@ -81,6 +81,9 @@ func handleCommand(cmd string) {
 		for _, c := range commands {
 			handleCommand(c)
 		}
+	case "exit":
+		println("Exiting Bob...")
+		os.Exit(0)
 	}
 }
 
