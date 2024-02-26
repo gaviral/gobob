@@ -11,7 +11,7 @@
   },
   "open_chatGPT": {
     "type": "cli",
-    "command": "open https://chat.openai.com",
+    "command": "open https://platform.openai.com/playground?assistant=asst_LqKgD9ejEKOP72ruQKBNGeYC&mode=assistant&thread=thread_b0XIiTUJZOLkcvc0hFuwBiLe",
     "phrases": [
       "open chatGPT",
       "open chat GPT",
@@ -51,6 +51,7 @@
     "command": "dictate_text | open_chatGPT | wait_2_sec | paste_text | press_enter",
     "phrases": [
       "query chatGPT",
+      "query chat GPT",
       "ask chatGPT",
       "ask chat GPT",
       "ask chat GPT a question"
