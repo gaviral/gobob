@@ -23,11 +23,28 @@ func main() {
 	loadCommands("commands.json")
 	// Continuously listen for commands
 	for {
-		var cmd string
-		fmt.Print("Enter command: ")
-		fmt.Scanln(&cmd)
-		handleCommand(cmd)
+		var userInput string
+		fmt.Print("Enter command phrase: ")
+		fmt.Scanln(&userInput)
+		cmd := findCommandByPhrase(userInput)
+		if cmd != "" {
+			handleCommand(cmd)
+		} else {
+			fmt.Printf("No command found for phrase: %s\n", userInput)
+		}
 	}
+}
+
+// findCommandByPhrase searches for a command by matching the user input with phrases.
+func findCommandByPhrase(phrase string) string {
+	for cmd, cmdInfo := range commandMap {
+		for _, p := range cmdInfo.Phrases {
+			if strings.EqualFold(phrase, p) {
+				return cmd
+			}
+		}
+	}
+	return ""
 }
 
 func loadCommands(filename string) {
