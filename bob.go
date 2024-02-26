@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// CommandInfo defines the structure for each command based on the JSON structure
+// CommandInfo defines the structure for each command based on the JSON structure.
 type CommandInfo struct {
 	Type    string   `json:"type"`
 	Command string   `json:"command"`
@@ -47,6 +47,7 @@ func findCommandByPhrase(phrase string) string {
 	return ""
 }
 
+// LoadCommands reads and unmarshals commands from a JSON file into commandMap.
 func loadCommands(filename string) {
 	println("Loading commands from file:", filename)
 	data, err := os.ReadFile(filename)
@@ -58,6 +59,7 @@ func loadCommands(filename string) {
 	}
 }
 
+// handleCommand executes the specified command based on its type.
 func handleCommand(cmd string) {
 	println("Handling command:", cmd)
 	commandDetails := commandMap[cmd]
@@ -74,6 +76,7 @@ func handleCommand(cmd string) {
 	}
 }
 
+// executeCLICommand executes a CLI command.
 func executeCLICommand(s string) {
 	println("Executing CLI command:", s)
 	cmd := exec.Command(strings.Fields(s)[0], strings.Fields(s)[1:]...)
@@ -82,6 +85,7 @@ func executeCLICommand(s string) {
 	}
 }
 
+// executeKeyPressCommand simulates key pressing based on command specifics.
 func executeKeyPressCommand(s string) {
 	println("Executing key press command:", s)
 	script := "tell application \"System Events\" to keystroke "
