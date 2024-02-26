@@ -13,7 +13,11 @@ var commandMap = map[string]map[string]string{
 	},
 	"open_chatGPT": {
 		"type":    "cli",
-		"command": "open -a 'Google Chrome' https://chat.openai.com/",
+		"command": "open https://chat.openai.com",
+	},
+	"wait_for_chatGPT": {
+		"type":    "cli",
+		"command": "sleep 2",
 	},
 	"paste_text": {
 		"type":    "key_press",
@@ -25,7 +29,7 @@ var commandMap = map[string]map[string]string{
 	},
 	"query_chatGPT": {
 		"type":    "chain",
-		"command": "dictate_text | open_chatGPT | paste_text | press_enter",
+		"command": "dictate_text | open_chatGPT | wait_for_chatGPT | paste_text | press_enter",
 	},
 	"dictate_text_and_paste": {
 		"type":    "chain",
@@ -34,20 +38,26 @@ var commandMap = map[string]map[string]string{
 }
 
 func main() {
-	var cmd = "dictate_text_and_paste"
+	println("\n\nStarting Bob...")
+
+	var cmd = "query_chatGPT"
 	handleCommand(cmd)
 
 }
 
 func handleCommand(cmd string) {
-	// switch based on the command type
-	switch commandMap[cmd]["type"] {
+	println("Handling command:", cmd)
+
+	var cmdType = commandMap[cmd]["type"]
+	var cmdString = commandMap[cmd]["command"]
+
+	switch cmdType {
 	case "cli":
-		executeCLICommand(commandMap[cmd]["command"])
+		executeCLICommand(cmdString)
 	case "key_press":
-		executeKeyPressCommand(commandMap[cmd]["command"])
+		executeKeyPressCommand(cmdString)
 	case "chain":
-		commands := strings.Split(commandMap[cmd]["command"], " | ")
+		commands := strings.Split(cmdString, " | ")
 		for _, c := range commands {
 			handleCommand(c)
 		}
@@ -55,6 +65,7 @@ func handleCommand(cmd string) {
 }
 
 func executeCLICommand(s string) {
+	println("Executing CLI command:", s)
 	var cmdStrings = strings.Fields(s)
 	cmd := exec.Command(cmdStrings[0], cmdStrings[1:]...)
 	err := cmd.Run()
@@ -65,6 +76,7 @@ func executeCLICommand(s string) {
 }
 
 func executeKeyPressCommand(s string) {
+	println("Executing key press command:", s)
 	var cmd *exec.Cmd
 
 	// Handling commands with "cmd" modifier key
