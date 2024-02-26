@@ -2,8 +2,8 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"log"
 	"os"
 	"os/exec"
@@ -21,7 +21,7 @@ var commandMap map[string]CommandInfo
 
 func main() {
 	println("\n\nStarting Bob...")
-	loadCommands("commands.json")
+	loadCommands("commands.yaml")
 
 	scanner := bufio.NewScanner(os.Stdin) // Create a new scanner
 	// Continuously listen for commands
@@ -56,13 +56,24 @@ func findCommandByPhrase(phrase string) string {
 }
 
 // LoadCommands reads and unmarshals commands from a JSON file into commandMap.
+//func loadCommands(filename string) {
+//	println("Loading commands from file:", filename)
+//	data, err := os.ReadFile(filename)
+//	if err != nil {
+//		log.Fatal("Error loading commands:", err)
+//	}
+//	if err := json.Unmarshal(data, &commandMap); err != nil {
+//		log.Fatalf("Error parsing commands: %v", err)
+//	}
+//}
+
 func loadCommands(filename string) {
 	println("Loading commands from file:", filename)
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		log.Fatal("Error loading commands:", err)
 	}
-	if err := json.Unmarshal(data, &commandMap); err != nil {
+	if err := yaml.Unmarshal(data, &commandMap); err != nil {
 		log.Fatalf("Error parsing commands: %v", err)
 	}
 }
@@ -71,19 +82,44 @@ func loadCommands(filename string) {
 func handleCommand(cmd string) {
 	println("Handling command:", cmd)
 	commandDetails := commandMap[cmd]
+
 	switch commandDetails.Type {
-	case "cli":
-		executeCLICommand(commandDetails.Command)
-	case "key_press":
-		executeKeyPressCommand(commandDetails.Command)
+	case "cli", "key_press": // Combined execution path for cli and key_press
+		executeSystemCommand(commandDetails.Command, commandDetails.Type) // Pass type to distinguish further if needed
 	case "chain":
-		commands := strings.Split(commandDetails.Command, " | ")
-		for _, c := range commands {
+		for _, c := range strings.Split(commandDetails.Command, " | ") {
 			handleCommand(c)
 		}
 	case "exit":
 		println("Exiting Bob...")
 		os.Exit(0)
+	}
+}
+
+// executeSystemCommand executes a system command based on the command type.
+func executeSystemCommand(commandStr string, commandType string) {
+	if commandType == "cli" {
+		println("Executing CLI command:", commandStr)
+		cmd := exec.Command(strings.Fields(commandStr)[0], strings.Fields(commandStr)[1:]...)
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
+	} else if commandType == "key_press" {
+		println("Executing key press command:", commandStr)
+		script := "tell application \"System Events\" to keystroke "
+		switch {
+		case strings.HasPrefix(commandStr, "cmd+"):
+			key := strings.TrimPrefix(commandStr, "cmd+")
+			script += fmt.Sprintf("\"%s\" using command down", key)
+		case commandStr == "enter":
+			script += "return"
+		default:
+			fmt.Printf("Unsupported key press command: %s\n", commandStr)
+			return
+		}
+		if err := exec.Command("osascript", "-e", script).Run(); err != nil {
+			fmt.Printf("Error executing key press command: %v\n", err)
+		}
 	}
 }
 
